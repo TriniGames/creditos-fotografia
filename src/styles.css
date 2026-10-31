@@ -1,0 +1,87 @@
+:root {
+  --papel: #f4f1ea;
+  --tinta: #1a1a1a;
+  --suave: #6b6b6b;
+  --linea: #d6d1c4;
+  --acento: #7a2e1f;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 2rem 1rem;
+  background: var(--papel);
+  color: var(--tinta);
+  font-family: Georgia, 'Times New Roman', serif;
+  line-height: 1.5;
+}
+
+body.centrado {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}
+
+h1, h2 { font-weight: normal; letter-spacing: 0.02em; }
+h1 { font-size: 1.6rem; margin: 0 0 1rem; }
+h2 { font-size: 1.1rem; margin: 2rem 0 0.75rem; border-bottom: 1px solid var(--linea); padding-bottom: 0.25rem; }
+
+.tarjeta {
+  width: 100%;
+  max-width: 420px;
+  padding: 2rem;
+  border: 1px solid var(--linea);
+  background: #fbfaf6;
+}
+.tarjeta.ancha { max-width: 960px; margin: 0 auto; }
+
+.cabecera { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+
+.suave { color: var(--suave); margin: 0 0 1rem; }
+.numero { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 1.8rem; margin: 0; }
+.aviso { color: var(--acento); margin: 0.5rem 0 0; }
+.error { color: var(--acento); margin: 1rem 0 0; }
+
+label { display: block; margin-bottom: 0.9rem; font-size: 0.95rem; color: var(--suave); }
+input, select {
+  display: block;
+  width: 100%;
+  margin-top: 0.3rem;
+  padding: 0.55rem 0.6rem;
+  font: inherit;
+  color: var(--tinta);
+  background: #fff;
+  border: 1px solid var(--linea);
+  border-radius: 0;
+}
+input:focus, select:focus, button:focus { outline: 2px solid var(--tinta); outline-offset: 1px; }
+
+button {
+  font: inherit;
+  padding: 0.55rem 1rem;
+  color: #fff;
+  background: var(--tinta);
+  border: 1px solid var(--tinta);
+  border-radius: 0;
+  cursor: pointer;
+}
+button.secundario {
+  background: transparent;
+  color: var(--tinta);
+  padding: 0.25rem 0.55rem;
+  margin: 0.15rem 0.2rem 0.15rem 0;
+  font-size: 0.9rem;
+}
+button[type=submit] { width: 100%; margin-top: 0.5rem; }
+
+.formulario { display: grid; gap: 0.2rem; max-width: 520px; margin-bottom: 1.5rem; }
+
+.lista { list-style: none; padding: 0; margin: 0; }
+.lista li { padding: 0.6rem 0; border-bottom: 1px solid var(--linea); }
+
+.tabla-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+th, td { text-align: left; padding: 0.55rem 0.5rem; border-bottom: 1px solid var(--linea); vertical-align: top; }
+th { color: var(--suave); font-weight: normal; }
