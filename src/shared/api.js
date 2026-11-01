@@ -12,7 +12,11 @@ export async function api(ruta, cuerpo) {
     throw new Error('NO_AUTORIZADO');
   }
   const datos = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(datos.error || 'ERROR');
+  if (!res.ok) {
+    const error = new Error(datos.error || 'ERROR');
+    error.status = res.status;
+    throw error;
+  }
   return datos;
 }
 

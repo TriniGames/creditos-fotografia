@@ -3,6 +3,16 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:status": "supabase status",
+    "db:reset": "supabase db reset --local",
+    "db:migrate": "supabase migration up --local",
+    "db:seed": "node scripts/local.mjs seed",
+    "local:env": "node scripts/local.mjs env",
+    "test:db": "node scripts/local.mjs test",
+    "test:local": "node scripts/smoke-local.mjs",
+    "test:circuito": "node scripts/circuito-local.mjs",
     "dev:ui": "vite",
     "build": "vite build",
     "dev": "npm run build && wrangler pages dev dist",
@@ -14,6 +24,8 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.0",
+    "pg": "^8.23.1",
+    "supabase": "^2.122.0",
     "vite": "^5.4.0",
     "wrangler": "^4.0.0"
   }

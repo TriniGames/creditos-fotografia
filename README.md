@@ -5,16 +5,19 @@ Frontend y funciones en **Cloudflare Pages**, base de datos y login en **Supabas
 
 Documentación técnica: [DOCUMENTACION_TECNICA.md](DOCUMENTACION_TECNICA.md).
 
+Entorno local: [LOCAL.md](LOCAL.md). Plan de implementación: [PLAN.md](PLAN.md).
+
 ## Estado actual
 
-Este paso incluye solo la **base de datos y las reglas de créditos**:
+El circuito disponible incluye:
 
-- `supabase/migrations/0001_schema.sql`: tablas.
-- `supabase/migrations/0002_rls.sql`: políticas de Row Level Security.
-- `supabase/migrations/0003_creditos.sql`: funciones de negocio (activación, ampliación, consumo, baja, reactivación, eliminación, vencimientos y avisos).
-- `supabase/tests/creditos_test.sql`: pruebas de esas reglas.
+- Alta y edición de clientes (usuario, nombre y marca), baja con motivo, reactivación y eliminación lógica.
+- Catálogo de planes y servicios con edición y desactivación.
+- Contratación de plan, registro de pago completo y aprobación manual para acreditar créditos.
+- Selección y confirmación de servicios por el cliente, descuento FIFO y consulta de pedidos e historial.
+- Migraciones `0001` a `0006`, reglas SQL, pruebas de concurrencia y permisos con usuarios reales.
 
-Pendiente en los próximos pasos: webhook de Mercado Pago, endpoints del Worker, pantallas de cliente y de administrador, términos y condiciones, agenda, respaldos automáticos.
+Pendientes: integración efectiva de Mercado Pago, aceptación de términos, agenda, recuperación/cambio de credenciales, traslado de créditos y respaldos automáticos. Ver [PLAN.md](PLAN.md).
 
 ## Principios
 
@@ -25,21 +28,22 @@ Pendiente en los próximos pasos: webhook de Mercado Pago, endpoints del Worker,
 
 ## Probar en local
 
-Requisitos: Docker, Supabase CLI y `psql`.
+Requisitos: Node.js y Docker Desktop iniciado. La CLI y el cliente PostgreSQL se instalan con npm.
 
-```bash
-supabase init            # si todavía no existe supabase/config.toml
-supabase start
-supabase db reset        # aplica las migraciones 0001, 0002 y 0003
-psql "$(supabase status -o env | grep DB_URL | cut -d= -f2- | tr -d '\"')" \
-     -f supabase/tests/creditos_test.sql
+```powershell
+npm install
+npm run db:start
+npm run local:env
+npm run db:seed
+npm run test:db
+npm run dev
 ```
 
 Si todo está bien, cada prueba imprime `OK ...` y al final `Todas las pruebas de créditos pasaron`. Cualquier falla detiene el script con el mensaje correspondiente.
 
 ## Variables de entorno
 
-Copiá `.env.example` a `.env.local` para desarrollo. En Cloudflare Pages cargá las mismas variables en **Settings → Environment variables**.
+Para desarrollo local, `npm run local:env` crea `.dev.vars` con las claves de Supabase local. En Cloudflare Pages cargá las variables del proyecto de producción en **Settings → Environment variables**.
 
 - `SUPABASE_SERVICE_ROLE_KEY` y `MP_ACCESS_TOKEN` son secretos: solo en el servidor (Cloudflare), nunca en el frontend ni en el repositorio.
 - `SUPABASE_ANON_KEY` puede ir en el frontend porque RLS limita lo que expone.

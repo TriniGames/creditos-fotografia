@@ -1,24 +1,12 @@
 import { useState } from 'react';
-import { api, nuevoId } from '../shared/api.js';
-import { mensajeError } from '../shared/errores.js';
 import { ARS } from '../shared/format.js';
 
-export default function Formularios({ estado, marcaDe, accion, recargar }) {
+export default function PlanesPagos({ estado, marcaDe, accion }) {
   const [planMensual, setPlanMensual] = useState('');
-  const pendientes = estado.planes_mensuales.filter((x) => x.estado === 'pendiente_pago');
-
-  async function nuevoCliente(e) {
-    e.preventDefault();
-    const datos = Object.fromEntries(new FormData(e.currentTarget));
-    try {
-      await api('/api/admin/crear-cliente', { ...datos, idem: nuevoId() });
-      e.currentTarget.reset();
-      window.alert('Cliente creado. Entregale usuario y contraseña en persona.');
-      await recargar();
-    } catch (err) {
-      window.alert(mensajeError(err));
-    }
-  }
+  const pendientes = estado.planes_mensuales.filter((x) => x.estado === 'pendiente_pago' && !estado.pagos.some((p) => p.profile_id === x.profile_id));
+  const planes = estado.planes.filter((p) => p.activo);
+  const clientes = estado.clientes.filter((c) => ['sin_creditos', 'activa'].includes(c.estado));
+  const mensualElegido = pendientes.find((x) => x.id === planMensual);
 
   function crearPlan(e) {
     e.preventDefault();
@@ -44,24 +32,12 @@ export default function Formularios({ estado, marcaDe, accion, recargar }) {
   return (
     <>
       <section>
-        <h2>Nuevo cliente</h2>
-        <form className="formulario" onSubmit={nuevoCliente}>
-          <label>Usuario <input name="username" required /></label>
-          <label>Nombre <input name="nombre" required /></label>
-          <label>Marca <input name="marca" required /></label>
-          <label>Correo <input name="email" type="email" required /></label>
-          <label>Contraseña temporal (mínimo 10) <input name="password" minLength={10} required /></label>
-          <button type="submit">Crear cliente</button>
-        </form>
-      </section>
-
-      <section>
-        <h2>Plan y pago</h2>
+        <h2>Planes y pagos</h2>
         <form className="formulario" onSubmit={crearPlan}>
           <label>
             Cliente
             <select name="profile" required>
-              {estado.clientes.map((c) => (
+              {clientes.map((c) => (
                 <option key={c.id} value={c.id}>{c.marca}</option>
               ))}
             </select>
@@ -69,14 +45,15 @@ export default function Formularios({ estado, marcaDe, accion, recargar }) {
           <label>
             Plan
             <select name="plan" required>
-              {estado.planes.map((p) => (
+              {planes.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.nombre} · {ARS.format(p.precio_ars)} · {p.creditos} cr.
                 </option>
               ))}
             </select>
           </label>
-          <button type="submit">Crear plan del mes</button>
+          <button type="submit" disabled={!clientes.length || !planes.length}>Crear plan del mes</button>
+          {!planes.length && <p>Cargá un plan activo en el catálogo para continuar.</p>}
         </form>
 
         <form className="formulario" onSubmit={registrarPago}>
@@ -89,7 +66,7 @@ export default function Formularios({ estado, marcaDe, accion, recargar }) {
               ))}
             </select>
           </label>
-          <label>Monto (ARS) <input name="monto" type="number" step="0.01" min="1" required /></label>
+          <label>Monto completo (ARS) <input name="monto" type="number" value={mensualElegido?.precio_ars ?? ''} readOnly required /></label>
           <label>
             Método
             <select name="metodo">
@@ -99,7 +76,7 @@ export default function Formularios({ estado, marcaDe, accion, recargar }) {
           </label>
           <label>ID de pago de Mercado Pago (opcional) <input name="mp_id" /></label>
           <label>Comprobante, URL (opcional) <input name="comprobante" /></label>
-          <button type="submit">Registrar pago</button>
+          <button type="submit" disabled={!mensualElegido}>Registrar pago</button>
         </form>
       </section>
     </>

@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { api } from '../shared/api.js';
 import { mensajeError } from '../shared/errores.js';
 import { fecha } from '../shared/format.js';
+import { useOperacion } from '../shared/useOperacion.js';
+import Toast from '../shared/Toast.jsx';
+import CabeceraSesion from '../shared/CabeceraSesion.jsx';
 
 const ESTADOS = {
   sin_creditos: 'Pendiente de pago',
@@ -21,14 +24,19 @@ const TIPOS = {
 export default function Cuenta() {
   const [datos, setDatos] = useState(null);
   const [error, setError] = useState(null);
+  const [seleccion, setSeleccion] = useState([]);
+  const { ejecutar, ocupado, aviso, cerrarAviso } = useOperacion();
 
   useEffect(() => {
     api('/api/cuenta').then(setDatos).catch((e) => setError(mensajeError(e)));
   }, []);
 
-  async function salir() {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    window.location.href = '/';
+  async function confirmar(e) {
+    e.preventDefault();
+    await ejecutar('/api/cuenta/pedido', { servicios: [...seleccion].sort() }, async () => {
+      setSeleccion([]);
+      setDatos(await api('/api/cuenta'));
+    }, 'Pedido confirmado. Los créditos se descontaron y tu pedido ya está registrado.');
   }
 
   if (!datos) {
@@ -39,13 +47,14 @@ export default function Cuenta() {
     );
   }
 
+  const total = datos.servicios.filter((s) => seleccion.includes(s.id)).reduce((sum, s) => sum + s.costo_creditos, 0);
+  const plazoVencido = !datos.plazo_fin || new Date(datos.plazo_fin).getTime() <= Date.now();
+  const puedePedir = datos.estado === 'activa' && !plazoVencido;
   return (
     <main className="tarjeta ancha">
-      <header className="cabecera">
-        <h1>{datos.marca}</h1>
-        <button className="secundario" onClick={salir}>Salir</button>
-      </header>
+      <CabeceraSesion titulo={datos.marca} />
       <p className="suave">{ESTADOS[datos.estado] ?? datos.estado}</p>
+      <Toast aviso={aviso} onCerrar={cerrarAviso} />
 
       <section>
         <h2>Saldo disponible</h2>
@@ -53,6 +62,32 @@ export default function Cuenta() {
         {datos.estado === 'activa' && datos.plazo_fin && (
           <p className="aviso">Elegí tus servicios antes del {fecha(datos.plazo_fin)}.</p>
         )}
+      </section>
+
+      <section>
+        <h2>Elegí tus servicios</h2>
+        {!puedePedir && <p className="aviso">{datos.estado === 'activa' ? 'El plazo de selección venció. Contactá al administrador.' : 'Tu cuenta debe estar activa para confirmar un pedido.'}</p>}
+        <form onSubmit={confirmar}>
+          <fieldset disabled={ocupado || !puedePedir}>
+            {!datos.servicios.length && <p>No hay servicios disponibles.</p>}
+            {datos.servicios.map((s) => <label className="opcion" key={s.id}>
+              <input type="checkbox" checked={seleccion.includes(s.id)} onChange={(e) => setSeleccion((prev) => e.target.checked ? [...prev,s.id] : prev.filter((id) => id !== s.id))} />
+              <span>{s.nombre} · {s.costo_creditos} créditos{s.descripcion && <span className="suave"> · {s.descripcion}</span>}</span>
+            </label>)}
+            <p>Total: <strong>{total} créditos</strong>. Saldo luego del pedido: {datos.saldo - total} créditos.</p>
+            {total > datos.saldo && <p className="error">El saldo no alcanza para esta selección.</p>}
+            <button type="submit" disabled={!seleccion.length || total > datos.saldo}>{ocupado ? 'Confirmando…' : 'Confirmar pedido y descontar créditos'}</button>
+          </fieldset>
+        </form>
+      </section>
+
+      <section>
+        <h2>Mis pedidos</h2>
+        {!datos.pedidos.length ? <p className="suave">Todavía no confirmaste pedidos.</p> :
+          <ul className="lista">{datos.pedidos.map((p) => <li key={p.id}>
+            {fecha(p.created_at)} · {p.total_creditos} créditos · {p.estado}
+            <div>{p.order_items.map((i) => `${i.nombre} (${i.costo_creditos} cr.)`).join(', ')}</div>
+          </li>)}</ul>}
       </section>
 
       <section>
@@ -70,8 +105,8 @@ export default function Cuenta() {
           <p className="suave">Todavía no hay movimientos.</p>
         ) : (
           <ul className="lista">
-            {datos.movimientos.map((m, i) => (
-              <li key={i}>
+            {datos.movimientos.map((m) => (
+              <li key={m.id}>
                 {fecha(m.created_at)} · {TIPOS[m.tipo] ?? m.tipo} · {m.cantidad > 0 ? '+' : ''}{m.cantidad}
               </li>
             ))}

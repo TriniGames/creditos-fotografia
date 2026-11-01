@@ -21,6 +21,7 @@ yarn-error.log*
 pnpm-debug.log*
 *.tsbuildinfo
 tmp/
+output/qa/
 
 # Archivos del sistema y editores
 .DS_Store

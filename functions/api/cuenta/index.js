@@ -7,10 +7,12 @@ export const onRequestGet = ({ data, env }) =>
   manejar(async () => {
     const { profile } = data.sesion;
 
-    const [saldo, planes, movimientos] = await Promise.all([
+    const [saldo, planes, movimientos, servicios, pedidos] = await Promise.all([
       sbRpc(env, 'saldo_cliente', { p_profile: profile.id }),
-      sbRest(env, `monthly_plans?profile_id=eq.${profile.id}&estado=eq.activo&select=periodo,creditos,ciclo_fin&limit=1`),
-      sbRest(env, `credit_movements?profile_id=eq.${profile.id}&select=tipo,cantidad,created_at&order=created_at.desc&limit=30`),
+      sbRest(env, `monthly_plans?profile_id=eq.${profile.id}&estado=eq.activo&ciclo_fin=gt.${encodeURIComponent(new Date().toISOString())}&select=periodo,creditos,ciclo_fin&order=ciclo_inicio.desc&limit=1`),
+      sbRest(env, `credit_movements?profile_id=eq.${profile.id}&select=id,tipo,cantidad,created_at&order=created_at.desc&limit=30`),
+      sbRest(env, 'services?activo=eq.true&select=id,nombre,descripcion,costo_creditos&order=nombre'),
+      sbRest(env, `service_orders?profile_id=eq.${profile.id}&select=id,estado,total_creditos,created_at,order_items(nombre,costo_creditos)&order=created_at.desc&limit=30`),
     ]);
 
     const plazoFin =
@@ -26,5 +28,7 @@ export const onRequestGet = ({ data, env }) =>
       plazo_fin: plazoFin,
       plan: planes[0] || null,
       movimientos,
+      servicios,
+      pedidos,
     });
   });

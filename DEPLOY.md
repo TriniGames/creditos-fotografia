@@ -35,6 +35,8 @@ Esto es importante: solo vos debés poder crear usuarios.
    2. `0002_rls.sql`
    3. `0003_creditos.sql`
    4. `0004_clientes.sql`
+   5. `0005_circuito.sql`
+   6. `0006_abm.sql`
 3. Si todo salió bien, cada ejecución termina sin errores.
 
 Opcional, para verificar las reglas: pegá `supabase/tests/creditos_test.sql` en el editor y tocá **Run**. Al final debe aparecer el mensaje *"Todas las pruebas de créditos pasaron"*. El archivo deshace sus cambios, no deja datos de prueba.
@@ -93,7 +95,7 @@ Este paso es el único que se hace a mano en la base. Después, todos los client
 
 ### 3.2 Configurar la compilación
 
-Completá estos campos (la plataforma no necesita compilar nada):
+Completá estos campos para compilar el frontend y publicar las funciones:
 
 | Campo | Valor |
 |---|---|
@@ -178,7 +180,7 @@ Abrí `http://localhost:8788`. Cada vez que cambies el frontend, `npm run dev` v
 | Al entrar al panel vuelve a la pantalla de ingreso | La cookie no se guardó. Revisá que el sitio esté en HTTPS (Cloudflare lo da por defecto) y que `PUBLIC_SITE_URL` sea la URL real. |
 | `/api/...` devuelve 404 | La carpeta `functions/` debe estar en la **raíz** del repositorio, no dentro de `src/` ni `dist/`. |
 | `/api/...` devuelve 500 `ERROR_INTERNO` | Mirá los logs en Cloudflare: **Workers & Pages → tu proyecto → Logs** (o *Real-time logs*). Casi siempre es una variable de entorno mal escrita o la service role key incorrecta. |
-| Las acciones dan "Ocurrió un error" | Revisá que las migraciones 0001 a 0004 se hayan ejecutado completas. Una migración que falló a la mitad deja funciones faltantes. |
+| Las acciones dan "Ocurrió un error" | Revisá que las migraciones 0001 a 0006 se hayan ejecutado completas. Una migración que falló a la mitad deja funciones faltantes. |
 | El cliente no puede iniciar sesión tras eliminarlo | Es el comportamiento esperado: el perfil queda en estado `eliminada` y el login se bloquea. |
 
 ---

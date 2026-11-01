@@ -4,6 +4,11 @@ Documentación técnica para revisión.
 
 > Conversión del PDF original. Se conserva su contenido y estado de revisión; no implica una validación actual del sistema.
 
+> Actualización de implementación (31/10/2026): las migraciones 0005 y 0006 completan el ABM de clientes
+> (usuario, nombre y marca), el catálogo y la confirmación de pedidos. Se verificaron las pruebas SQL,
+> login, permisos y el circuito HTTP con reintentos concurrentes. El texto original de abajo se conserva
+> como referencia histórica; el estado vigente y los pendientes están en [PLAN.md](PLAN.md) y [LOCAL.md](LOCAL.md).
+
 Estado: versión inicial, sin ejecutar contra base real. Pendiente de pruebas e integración de pagos.
 
 ## 1. Resumen
