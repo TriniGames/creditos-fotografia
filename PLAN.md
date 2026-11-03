@@ -29,6 +29,8 @@ Verificado también el ingreso y la navegación de ambos paneles en navegador.
 - [x] Mostrar servicios disponibles, seleccionar y confirmar pedidos mediante API autenticada.
 - [x] Probar saldo insuficiente, plazo vencido, FIFO, reintentos y acceso entre clientes.
 - [x] Mostrar pedidos al cliente y al administrador, además del historial de movimientos.
+- [x] Notificación persistente por pedido, contador de pendientes y revisión administrativa visible para el cliente.
+- [x] Unificar el panel del cliente con navegación, tarjetas de resumen, confirmación y tablas compartidas.
 - [ ] Registrar aceptación de términos.
 
 Validación reproducible: `npm run build`, `npm run test:db`, `npm run test:local` y `npm run test:circuito`.
@@ -44,3 +46,15 @@ La prueba de circuito crea datos temporales y los elimina al terminar, sin alter
 - Agregar CI con build y pruebas de base de datos.
 
 Cada etapa se considera terminada al verificar su comportamiento. El build por sí solo no valida reglas SQL ni login.
+
+Pedidos: se distingue **recibido, pendiente de revisión** de **revisado por el administrador**, con fechas. El cliente puede dejar un comentario inicial opcional al confirmar y el admin una respuesta opcional al confirmar la revisión (máximo 2000 caracteres cada uno). No se editan después de enviar ni admiten respuestas sucesivas. La coordinación posterior se realiza por los canales habituales, fuera del panel. Requiere la migración 0008 (en local: `npm run db:migrate`, sin reiniciar datos).
+
+Catálogo: la descripción del servicio se edita en un campo amplio en Administración → Catálogo → Editar servicio. El cliente la despliega con **Ver detalle del servicio**, independientemente de la selección. Admite saltos de línea, sin HTML. La barra superior usa `BarraPanel`, un componente común que permanece separado del contenido de cada vista.
+
+## Capacidad simultánea (implementada)
+
+- [x] Topes generales por cliente y del equipo, configurables desde administración, con excepciones por cliente.
+- [x] Validación transaccional común entre clientes, idempotencia y visibilidad antes de confirmar pedidos.
+- [x] Entrega completa auditada para liberar capacidad sin cambiar saldo.
+- [x] Prueba de topes, bloqueo global, rechazos sin efectos, excepciones, entrega y permisos: `npm run test:capacidad`.
+- [ ] Calendario por servicio: **solo planificación**, ver [PLAN_CALENDARIO.md](PLAN_CALENDARIO.md).

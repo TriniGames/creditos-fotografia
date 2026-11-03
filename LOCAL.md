@@ -62,6 +62,20 @@ usa datos temporales propios y los elimina al terminar. Requiere Supabase y la a
 7. Como administrador podés ampliar créditos, dar de baja con motivo y reactivar con devolución opcional y plazo de 24 horas.
 8. **Eliminar** conserva el historial y bloquea el acceso, incluidas las sesiones existentes. No permite reactivación.
 
+## Avisos de pedidos
+
+Al confirmar un pedido se guarda una notificación en la misma transacción que descuenta los créditos.
+El admin tiene una bandeja **Pedidos nuevos**, contador persistente y acceso al detalle.
+Con la pestaña visible se buscan pedidos nuevos cada 15 segundos y también al volver a la ventana;
+los avisos pendientes se conservan si el panel está cerrado. No es una notificación por correo ni WhatsApp.
+**Marcar como revisado** deja constancia del administrador y la fecha, limpia el pendiente y permite
+que el cliente vea la revisión. Esta acción no cambia el estado de producción del pedido.
+
+La cuenta del cliente tiene **Resumen**, **Elegir servicios**, **Mis pedidos** y **Movimientos**.
+Antes de enviar muestra un resumen para confirmar el descuento. La cuenta se actualiza cada 30 segundos
+cuando la pestaña está visible y al volver a ella; no actualiza la selección mientras se está confirmando.
+En **Mis pedidos** se distingue recepción de revisión por el equipo.
+
 Para reconstruir **la base local borrando sus datos**:
 
 ```powershell
@@ -72,3 +86,15 @@ npm run test:db
 
 `db:seed` agrega cuentas y catálogo si faltan; no reinicia contraseñas ni saldos existentes.
 El registro público está deshabilitado. Las cuentas se crean desde el servidor mediante Auth Admin.
+
+Pedidos: se distingue **recibido, pendiente de revisión** de **revisado por el administrador**, con fechas. El cliente puede dejar un comentario inicial opcional al confirmar y el admin una respuesta opcional al confirmar la revisión (máximo 2000 caracteres cada uno). No se editan después de enviar ni admiten respuestas sucesivas. La coordinación posterior se realiza por los canales habituales, fuera del panel. Requiere la migración 0008 (en local: `npm run db:migrate`, sin reiniciar datos).
+
+Catálogo: la descripción del servicio se edita en un campo amplio en Administración → Catálogo → Editar servicio. El cliente la despliega con **Ver detalle del servicio**, independientemente de la selección. Admite saltos de línea, sin HTML. La barra superior usa `BarraPanel`, un componente común que permanece separado del contenido de cada vista.
+
+## Capacidad simultánea
+
+Aplicar la migración 0009 con `npm run db:migrate`. En Administración → Capacidad se configura el máximo de créditos pendientes por cliente y del equipo, además de excepciones individuales. Vacío = sin tope, cero = pausa. Los pedidos existentes se conservan aunque se baje el límite. Los pedidos recibidos, agendados y en producción ocupan capacidad; entregados y cancelados no. Revisar no libera capacidad y entregar no devuelve saldo. La acción de entrega completa requiere revisión previa, confirmación explícita y queda auditada. No modifica las fechas de agenda.
+
+El cliente ve su carga y la capacidad disponible antes de pedir. La base revalida los topes con un bloqueo global para pedidos de diferentes clientes y cambios de configuración. Si no hay lugar, rechaza toda la operación sin consumir saldo ni generar avisos. La capacidad del equipo se representa en créditos, como aproximación de carga, sin equivalencia automática con horas.
+
+Prueba transaccional específica: `npm run test:capacidad`. Revierte clientes, pedidos, límites y auditoría de prueba; no deja configurados topes reales. El calendario está solamente planificado en [PLAN_CALENDARIO.md](PLAN_CALENDARIO.md).

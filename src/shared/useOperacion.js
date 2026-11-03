@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { api, nuevoId } from './api.js';
 import { mensajeError } from './errores.js';
 
@@ -9,11 +9,11 @@ export function useOperacion() {
   const [ocupado, setOcupado] = useState(false);
   const [aviso, setAviso] = useState(null);
   const [historial, setHistorial] = useState([]);
-  function notificar(texto, tipo) {
+  const notificar = useCallback((texto, tipo) => {
     const item = { id: nuevoId(), texto, tipo, fecha: new Date().toISOString() };
     setAviso(item);
     setHistorial((prev) => [item, ...prev].slice(0, 20));
-  }
+  }, []);
   async function ejecutar(ruta, cuerpo, despues, mensaje = 'Cambios guardados.') {
     if (bloqueo.current) return false;
     bloqueo.current = true;
@@ -23,10 +23,10 @@ export function useOperacion() {
     const idem = intentos.current.get(firma) || nuevoId();
     intentos.current.set(firma, idem);
     try {
-      await api(ruta, { ...cuerpo, idem });
+      const resultado = await api(ruta, { ...cuerpo, idem });
       intentos.current.delete(firma);
       try {
-        await despues?.();
+        await despues?.(resultado);
         notificar(mensaje, 'exito');
       }
       catch { notificar(`${mensaje} No se pudo actualizar la vista; recargá la página.`, 'advertencia'); }
@@ -40,5 +40,5 @@ export function useOperacion() {
       setOcupado(false);
     }
   }
-  return { ejecutar, ocupado, aviso, historial, cerrarAviso: () => setAviso(null) };
+  return { ejecutar, ocupado, aviso, historial, notificar, cerrarAviso: () => setAviso(null) };
 }

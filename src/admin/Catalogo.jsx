@@ -32,7 +32,10 @@ export default function Catalogo({ estado, accion, ocupado }) {
             { id: 'precio_ars', titulo: 'Precio', alineacion: 'derecha', render: (item) => ARS.format(item.precio_ars) },
             { id: 'creditos', titulo: 'Créditos incluidos', alineacion: 'derecha' },
           ] : [
-            { id: 'descripcion', titulo: 'Descripción' },
+            { id: 'descripcion', titulo: 'Descripción para el cliente', render: (s) => <>
+              {s.descripcion && <details className="servicio-detalle"><summary>Ver descripción</summary><p>{s.descripcion}</p></details>}
+              <button type="button" className="secundario editar" disabled={ocupado} onClick={() => setEditor({tipo:'servicio',item:s,focoDescripcion:true})}>{s.descripcion ? 'Editar descripción' : 'Agregar descripción'}</button>
+            </> },
             { id: 'costo_creditos', titulo: 'Costo en créditos', alineacion: 'derecha' },
           ]),
           { id: 'activo', titulo: 'Estado', render: (item) => <EstadoBadge variante={item.activo ? 'positivo' : 'neutro'}>{item.activo ? 'Activo' : 'Inactivo'}</EstadoBadge> },
@@ -50,7 +53,7 @@ export default function Catalogo({ estado, accion, ocupado }) {
         <input name="valor" type="number" min={editor.tipo === 'plan' ? '0.01' : '1'} step={editor.tipo === 'plan' ? '0.01' : '1'} defaultValue={editor.item?.precio_ars ?? editor.item?.costo_creditos ?? ''} required />
       </label>
       {editor.tipo === 'plan' ? <label>Créditos incluidos <input name="creditos" type="number" min="1" step="1" defaultValue={editor.item?.creditos || ''} required /></label>
-        : <label>Descripción <input name="descripcion" defaultValue={editor.item?.descripcion || ''} /></label>}
+        : <label>Descripción para el cliente <textarea name="descripcion" data-foco-inicial={editor.focoDescripcion || undefined} rows="7" maxLength={8000} placeholder="Contá qué incluye, qué debe aportar el cliente, entregables y alcance del servicio." defaultValue={editor.item?.descripcion || ''} /><small>Hasta 8000 caracteres. El cliente puede desplegarla antes de elegir.</small></label>}
       <label className="opcion"><input type="checkbox" name="activo" defaultChecked={editor.item?.activo ?? true} />Disponible para nuevas compras</label>
       <p className="suave">Desmarcá la disponibilidad para darlo de baja sin borrar el historial.</p>
       <div className="modal__acciones">

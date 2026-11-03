@@ -1,5 +1,11 @@
 // Mensajes en español para los códigos que devuelve la base de datos.
 const ERRORES = {
+  LIMITE_INVALIDO: 'Ingresá un límite entero de créditos igual o mayor que cero, o dejalo vacío.',
+  TOPE_CLIENTE_SUPERADO: 'Este pedido supera tu capacidad pendiente permitida. Esperá la entrega de trabajos anteriores o contactá al equipo.',
+  CAPACIDAD_EQUIPO_SUPERADA: 'El equipo no tiene capacidad disponible para esta selección. Probá con menos servicios o consultá al equipo.',
+  COMENTARIO_INVALIDO: 'El comentario debe tener como máximo 2000 caracteres.',
+  PEDIDO_YA_REVISADO: 'El pedido ya fue revisado. La respuesta enviada no puede modificarse. Actualizá la lista.',
+  PEDIDO_INEXISTENTE: 'No se encontró el pedido. Actualizá la lista.',
   USUARIO_EN_USO: 'Ese usuario ya está en uso.',
   EMAIL_EN_USO: 'Ese correo ya tiene una cuenta.',
   USUARIO_INVALIDO: 'Usá entre 3 y 30 caracteres: letras minúsculas, números, punto, guion o guion bajo.',

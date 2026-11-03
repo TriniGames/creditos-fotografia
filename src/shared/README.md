@@ -1,5 +1,12 @@
 # Componentes de presentación
 
+## Pedidos y navegación
+
+`NavegacionPanel` recibe secciones, la selección actual y un callback para cambiarla; lo usan ambos roles.
+`Pedidos` comparte tabla y detalle entre admin y cliente. Recibe `pedidos`, `abierto`, `onAbrir`, `ocupado`
+y, solo en administración, `marcaDe` y `onRevisar`. La revisión no cambia el estado de producción.
+`useAutoActualizar` consulta periódicamente y al recuperar foco; pausa con la pestaña oculta o `habilitado=false`.
+
 ## Sesión compartida
 
 `SesionProvider` mantiene en memoria la identidad validada por `GET /api/auth/sesion`.
@@ -45,3 +52,5 @@ Los permisos de las API se verifican en el servidor, independientemente del esta
 `BotonAccion` mantiene las variantes `primaria`, `neutra`, `editar`, `positivo`, `precaucion` y `destructivo`. Siempre es un botón de acción (`type="button"`).
 
 `EstadoBadge` recibe una variante `positivo`, `advertencia`, `peligro` o `neutro` y su etiqueta como contenido. Los textos y reglas de estado pertenecen a cada pantalla.
+
+`BarraPanel` es el marco global compartido por administración y clientes: separa el centro de notificaciones/estado de la cuenta de la navegación y del contenido de cada sección. `Pedidos` comparte seguimiento y dos notas únicas, sin hilo de respuestas.

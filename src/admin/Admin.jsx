@@ -1,17 +1,23 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../shared/api.js';
 import { useOperacion } from '../shared/useOperacion.js';
 import { mensajeError } from '../shared/errores.js';
-import { fecha } from '../shared/format.js';
 import Clientes from './Clientes.jsx';
 import PlanesPagos from './PlanesPagos.jsx';
 import NuevoCliente from './NuevoCliente.jsx';
 import Catalogo from './Catalogo.jsx';
+import Capacidad from './Capacidad.jsx';
 import Toast from '../shared/Toast.jsx';
 import Pendientes from './Pendientes.jsx';
 import CabeceraSesion from '../shared/CabeceraSesion.jsx';
+import Pedidos from '../shared/Pedidos.jsx';
+import BarraPanel from '../shared/BarraPanel.jsx';
+import { useAutoActualizar } from '../shared/useAutoActualizar.js';
 
 const CONFIRMACIONES = {
+  guardar_capacidad: 'Topes de capacidad guardados.',
+  guardar_limite_cliente: 'Límite del cliente actualizado.',
+  entregar_pedido: 'Pedido marcado como entregado. Se liberó su capacidad pendiente.',
   modificar_cliente: 'Datos del cliente actualizados.',
   guardar_catalogo: 'Catálogo actualizado.',
   crear_plan_mensual: 'Plan mensual creado. Ya podés registrar el pago.',
@@ -22,6 +28,7 @@ const CONFIRMACIONES = {
   reactivar: 'Cuenta reactivada. El cliente tiene 24 horas para elegir servicios.',
   eliminar_cuenta: 'Cuenta eliminada y acceso bloqueado. El historial se conserva.',
   marcar_notificacion_leida: 'Aviso marcado como leído.',
+  revisar_pedido: 'Pedido marcado como revisado. El cliente ya puede verlo en su cuenta.',
 };
 
 export default function Admin() {
@@ -30,12 +37,19 @@ export default function Admin() {
   const [seccion, setSeccion] = useState('clientes');
   const [bandeja, setBandeja] = useState(null);
   const [altaAbierta, setAltaAbierta] = useState(false);
-  const { ejecutar, ocupado, aviso, historial, cerrarAviso } = useOperacion();
+  const [pedidoAbierto, setPedidoAbierto] = useState(null);
+  const [errorPedidos, setErrorPedidos] = useState(null);
+  const conocidos = useRef(new Set());
+  const revisionPedidos = useRef(0);
+  const { ejecutar, ocupado, aviso, historial, notificar, cerrarAviso } = useOperacion();
 
   // Recarga el resumen. Al consultarlo el servidor también genera avisos nuevos.
   const cargar = useCallback(async () => {
+    revisionPedidos.current += 1;
     try {
-      setEstado(await api('/api/admin/resumen'));
+      const resumen = await api('/api/admin/resumen');
+      resumen.pedidos.forEach((p) => conocidos.current.add(p.id));
+      setEstado(resumen);
       setError(null);
     } catch (e) {
       setError(mensajeError(e));
@@ -46,6 +60,31 @@ export default function Admin() {
   useEffect(() => {
     cargar().catch(() => {});
   }, [cargar]);
+
+  useAutoActualizar(async () => {
+    const revision = revisionPedidos.current;
+    try {
+      const resumen = await api('/api/admin/pedidos');
+      if (revision !== revisionPedidos.current) return;
+      const nuevos = resumen.pedidos.filter((p) => !conocidos.current.has(p.id) && !p.revisado_at && p.estado !== 'cancelado');
+      resumen.pedidos.forEach((p) => conocidos.current.add(p.id));
+      setEstado((prev) => ({ ...prev, ...resumen }));
+      setErrorPedidos(null);
+      if (nuevos.length) {
+        // El descuento también debe verse en la tabla de clientes al recibir el pedido.
+        await cargar().catch(() => {});
+        notificar(nuevos.length === 1 ? `Nuevo pedido de ${nuevos[0].profiles?.marca || 'un cliente'}. Abrí Pedidos nuevos para revisarlo.` : `Llegaron ${nuevos.length} pedidos nuevos. Abrí la bandeja para revisarlos.`, 'advertencia');
+      }
+    } catch {
+      if (revision === revisionPedidos.current) setErrorPedidos('No se pudieron actualizar los pedidos. Se reintentará automáticamente.');
+    }
+  }, { habilitado: Boolean(estado) && !ocupado && !altaAbierta });
+
+  function verPedido(id) {
+    setBandeja(null);
+    setSeccion('pedidos');
+    setPedidoAbierto(id);
+  }
 
   const accion = (nombre, datos) => ejecutar('/api/admin/accion', { accion: nombre, datos }, cargar, CONFIRMACIONES[nombre]);
   const crearCliente = (datos) => ejecutar('/api/admin/crear-cliente', datos, cargar, 'Cliente creado. Ya puede ingresar con sus credenciales.');
@@ -66,12 +105,14 @@ export default function Admin() {
 
       <Toast aviso={aviso || (error ? { texto: error, tipo: 'error' } : null)}
         onCerrar={() => { cerrarAviso(); setError(null); }} />
-      <div className="admin-barra">
-        <nav className="admin-secciones" aria-label="Secciones del panel">
-          {[['clientes','Clientes'],['gestion','Planes y pagos'],['catalogo','Catálogo'],['pedidos','Pedidos']].map(([id,texto]) =>
-            <button key={id} className="admin-seccion" aria-pressed={seccion === id} disabled={ocupado} onClick={() => setSeccion(id)}>{texto}</button>)}
-        </nav>
+      <BarraPanel titulo="Centro de notificaciones" actual={seccion} onCambiar={setSeccion} ocupado={ocupado} secciones={[
+          {id:'clientes',texto:'Clientes'},{id:'gestion',texto:'Planes y pagos'},{id:'catalogo',texto:'Catálogo'},
+          {id:'pedidos',texto:'Pedidos',contador:estado.pedidos_nuevos},{id:'capacidad',texto:'Capacidad'},
+        ]} >
         <nav className="admin-pendientes" aria-label="Notificaciones y pendientes">
+          <button className={`bandeja-boton ${estado.pedidos_nuevos ? 'bandeja-boton--atencion' : ''}`} disabled={ocupado} onClick={() => setBandeja('pedidos')}>
+            Pedidos nuevos <span className="contador">{estado.pedidos_nuevos}</span>
+          </button>
           <button className={`bandeja-boton ${estado.pagos.length ? 'bandeja-boton--atencion' : ''}`} disabled={ocupado} onClick={() => setBandeja('pagos')}>
             Pagos por aprobar <span className="contador">{estado.pagos.length}</span>
           </button>
@@ -81,9 +122,10 @@ export default function Admin() {
           <button className="bandeja-boton" disabled={ocupado} onClick={() => setBandeja('actividad')}>Actividad <span className="contador">{historial.length}</span></button>
         </nav>
         {ocupado && <p className="admin-progreso" role="status">Guardando cambios…</p>}
-      </div>
+        {errorPedidos && <p className="admin-progreso error" role="status">{errorPedidos}</p>}
+      </BarraPanel>
       {bandeja && <Pendientes vista={bandeja} cambiarVista={setBandeja} estado={estado} historial={historial}
-        marcaDe={marcaDe} accion={accion} ocupado={ocupado} onCerrar={() => setBandeja(null)} />}
+        marcaDe={marcaDe} accion={accion} ocupado={ocupado} onCerrar={() => setBandeja(null)} onVerPedido={verPedido} />}
       {altaAbierta && <NuevoCliente crearCliente={crearCliente} ocupado={ocupado} onCerrar={() => setAltaAbierta(false)} />}
       <fieldset disabled={ocupado} aria-busy={ocupado}>
       {seccion === 'clientes' && <>
@@ -91,14 +133,14 @@ export default function Admin() {
         <Clientes clientes={estado.clientes} accion={accion} ocupado={ocupado} />
       </>}
       {seccion === 'gestion' && <PlanesPagos estado={estado} marcaDe={marcaDe} accion={accion} />}
+      {seccion === 'capacidad' && <Capacidad capacidad={estado.capacidad} clientes={estado.clientes} accion={accion} ocupado={ocupado} />}
       {seccion === 'catalogo' && <Catalogo estado={estado} accion={accion} ocupado={ocupado} />}
       {seccion === 'pedidos' && <section>
         <h2>Pedidos de clientes</h2>
-        {!estado.pedidos.length ? <p className="suave">Todavía no hay pedidos.</p> :
-          <ul className="lista">{estado.pedidos.map((p) => <li key={p.id}>
-            <strong>{marcaDe(p.profile_id)}</strong> · {fecha(p.created_at)} · {p.total_creditos} créditos · {p.estado}
-            <div>{p.order_items.map((i) => i.nombre).join(', ')}</div>
-          </li>)}</ul>}
+        <div className="resumen-pedidos"><strong>{estado.pedidos_nuevos} {estado.pedidos_nuevos === 1 ? 'pendiente' : 'pendientes'} de revisión</strong><span>Se muestran hasta 50 pedidos, con prioridad para los pendientes.</span></div>
+        <Pedidos pedidos={estado.pedidos} marcaDe={marcaDe} ocupado={ocupado} abierto={pedidoAbierto} onAbrir={setPedidoAbierto}
+          onRevisar={(id,comentario) => accion('revisar_pedido',{p_order:id,p_comentario:comentario})}
+          onEntregar={(id) => accion('entregar_pedido',{p_order:id})} />
       </section>}
       </fieldset>
     </main>

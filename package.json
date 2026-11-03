@@ -16,7 +16,8 @@
     "dev:ui": "vite",
     "build": "vite build",
     "dev": "npm run build && wrangler pages dev dist",
-    "deploy": "npm run build && wrangler pages deploy dist"
+    "deploy": "npm run build && wrangler pages deploy dist",
+    "test:capacidad": "node scripts/capacidad-local.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

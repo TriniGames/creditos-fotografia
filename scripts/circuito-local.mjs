@@ -52,11 +52,12 @@ try {
   ok(await action('reactivar',{p_profile:profile,p_devolver:0,p_motivo:'Retomar contratación'}));
   console.log('OK modificación, nuevo usuario de acceso y permisos');
 
-  const guardar=(tipo,id,nombre,valor,creditos,activo=true) => action('guardar_catalogo',{
-    p_tipo:tipo,p_id:id,p_nombre:nombre,p_valor:valor,p_creditos:creditos,p_descripcion:null,p_activo:activo,
+  const guardar=(tipo,id,nombre,valor,creditos,activo=true,descripcion=null) => action('guardar_catalogo',{
+    p_tipo:tipo,p_id:id,p_nombre:nombre,p_valor:valor,p_creditos:creditos,p_descripcion:descripcion,p_activo:activo,
   });
   const plan=ok(await guardar('plan',null,`Plan ${suffix}`,10000,1000)); ids.push(plan);
-  const servicio=ok(await guardar('servicio',null,`Servicio ${suffix}`,300,null)); ids.push(servicio);
+  const descripcion='Incluye piezas de diseño.\nEntregables: archivos listos para publicar.';
+  const servicio=ok(await guardar('servicio',null,`Servicio ${suffix}`,300,null,true,descripcion)); ids.push(servicio);
   const caro=ok(await guardar('servicio',null,`Servicio caro ${suffix}`,900,null)); ids.push(caro);
   const mensual=ok(await action('crear_plan_mensual',{p_profile:profile,p_plan:plan}));
   ids.push(mensual);
@@ -71,12 +72,36 @@ try {
   assert.equal((await cuenta(cliente.cookie)).saldo,1000);
   console.log('OK plan, validación de monto, pago único y activación concurrente');
 
-  const pedido={servicios:[servicio],idem:idem()};
+  assert.equal((await cuenta(cliente.cookie)).servicios.find((s)=>s.id===servicio).descripcion,descripcion,'Descripción completa visible para el cliente');
+  const pedido={servicios:[servicio],comentario:'Necesitamos piezas para el lanzamiento.\nPrioridad: portada.',idem:idem()};
   const pedidos=await Promise.all([request('/api/cuenta/pedido',cliente.cookie,pedido),request('/api/cuenta/pedido',cliente.cookie,pedido)]);
   assert.deepEqual(ok(pedidos[0]),ok(pedidos[1]));
+  const pedidoId=ok(pedidos[0]).order_id; ids.push(pedidoId);
+  const avisosPedido=await db.query("select id,leida from admin_notifications where order_id=$1 and tipo='pedido_nuevo'",[pedidoId]);
+  assert.equal(avisosPedido.rows.length,1,'Un solo aviso ante confirmaciones concurrentes');
+  assert.equal(avisosPedido.rows[0].leida,false);
+  const bandeja=await request('/api/admin/pedidos',admin.cookie);
+  assert.equal(bandeja.status,200,JSON.stringify(bandeja.data));
+  assert.ok(bandeja.data.pedidos.some((p)=>p.id===pedidoId && !p.revisado_at),'Pedido visible como nuevo');
+  assert.equal(bandeja.data.pedidos_nuevos,Number((await db.query("select count(*) from service_orders where revisado_at is null and estado<>'cancelado'")).rows[0].count),'Contador exacto de pedidos nuevos');
+  assert.equal((await request('/api/admin/pedidos',cliente.cookie)).status,401);
+  assert.equal((await request('/api/admin/accion',cliente.cookie,{accion:'revisar_pedido',datos:{p_order:pedidoId},idem:idem()})).status,401);
+  assert.equal((await cuenta(cliente.cookie)).pedidos.find((p)=>p.id===pedidoId).comentario_cliente,pedido.comentario);
+  error(await request('/api/cuenta/pedido',cliente.cookie,{...pedido,comentario:'Otro contexto'}),'IDEMPOTENCIA_CONFLICTO');
+  assert.equal((await request('/api/cuenta/pedido',cliente.cookie,{servicios:[servicio],comentario:'x'.repeat(2001),idem:idem()})).data.error,'COMENTARIO_INVALIDO');
+  const revision={p_order:pedidoId,p_comentario:'Analizamos el alcance. Coordinaremos los materiales por el canal habitual.'};
+  const revisiones=await Promise.all([action('revisar_pedido',revision),action('revisar_pedido',revision)]);
+  revisiones.forEach(ok);
+  error(await action('revisar_pedido',{...revision,p_comentario:'Otra respuesta'}),'PEDIDO_YA_REVISADO');
+  assert.equal((await cuenta(cliente.cookie)).pedidos.find((p)=>p.id===pedidoId).comentario_admin,revision.p_comentario);
+  assert.equal((await db.query('select leida from admin_notifications where order_id=$1',[pedidoId])).rows[0].leida,true);
+  assert.equal(Number((await db.query("select count(*) from admin_audit where entidad_id=$1 and accion='revisar_pedido'",[pedidoId])).rows[0].count),1,'Revisar repetido no duplica auditoría');
+  assert.ok((await cuenta(cliente.cookie)).pedidos.find((p)=>p.id===pedidoId).revisado_at,'El cliente ve la revisión');
+  console.log('OK aviso persistente único, contador, acceso administrativo y revisión visible para el cliente');
   let datos=await cuenta(cliente.cookie);
   assert.equal(datos.saldo,700); assert.equal(datos.pedidos.length,1);
   error(await request('/api/cuenta/pedido',cliente.cookie,{servicios:[caro],idem:idem()}),'SALDO_INSUFICIENTE');
+  assert.equal(Number((await db.query("select count(*) from admin_notifications where profile_id=$1 and tipo='pedido_nuevo'",[profile])).rows[0].count),1,'Un pedido rechazado no genera avisos');
   error(await request('/api/cuenta/pedido',cliente.cookie,{servicios:[caro],idem:pedido.idem}),'IDEMPOTENCIA_CONFLICTO');
   ok(await guardar('servicio',servicio,`Servicio editado ${suffix}`,350,null));
   datos=await cuenta(cliente.cookie);
@@ -99,7 +124,7 @@ try {
   await db.query("update profiles set plazo_inicio=now()-interval '2 days' where id=$1",[profile]);
   error(await request('/api/cuenta/pedido',cliente.cookie,{servicios:[servicio],idem:idem()}),'PLAZO_VENCIDO');
   await db.query('update profiles set plazo_inicio=now() where id=$1',[profile]);
-  ok(await request('/api/cuenta/pedido',cliente.cookie,{servicios:[servicio],idem:idem()}));
+  ids.push(ok(await request('/api/cuenta/pedido',cliente.cookie,{servicios:[servicio],idem:idem()})).order_id);
   assert.equal((await cuenta(cliente.cookie)).saldo,150);
 
   // Verificar RLS con un token real: sin acceso al perfil de otra persona ni escritura directa.

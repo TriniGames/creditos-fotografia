@@ -1,4 +1,5 @@
 const TRAZOS = {
+  ver: <><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></>,
   editar: <><path d="m15 5 4 4M4 20l4-1L20 7a2.8 2.8 0 0 0-4-4L4 15z" /></>,
   sumar: <><circle cx="12" cy="12" r="9" /><path d="M12 8v8M8 12h8" /></>,
   reactivar: <><path d="M20 7v5h-5M20 12a8 8 0 1 0-2 5M20 7l-3-3" /></>,

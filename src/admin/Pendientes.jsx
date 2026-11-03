@@ -2,20 +2,31 @@ import { useState } from 'react';
 import Modal from '../shared/Modal.jsx';
 import { ARS, fecha } from '../shared/format.js';
 
-export default function Pendientes({ vista, cambiarVista, estado, historial, marcaDe, accion, ocupado, onCerrar }) {
+export default function Pendientes({ vista, cambiarVista, estado, historial, marcaDe, accion, ocupado, onCerrar, onVerPedido }) {
   const [pago, setPago] = useState(null);
-  const titulos = { pagos: 'Pagos por aprobar', avisos: 'Avisos pendientes', actividad: 'Actividad de esta sesión' };
+  const titulos = { pedidos: 'Pedidos nuevos', pagos: 'Pagos por aprobar', avisos: 'Avisos pendientes', actividad: 'Actividad de esta sesión' };
   async function aprobar() {
     if (await accion('aprobar_pago_y_activar', { p_payment: pago.id })) setPago(null);
   }
   return <Modal titulo={titulos[vista]} detalle="Revisá los pendientes y el resultado de tus acciones desde cualquier sección."
     ocupado={ocupado} onCerrar={onCerrar}>
     <nav className="bandeja-nav" aria-label="Contenido de la bandeja">
-      {['pagos','avisos','actividad'].map((v) => <button type="button" key={v} className="secundario"
+      {['pedidos','pagos','avisos','actividad'].map((v) => <button type="button" key={v} className="secundario"
         aria-pressed={vista === v} onClick={() => { setPago(null); cambiarVista(v); }}>
-        {v === 'pagos' ? `Pagos (${estado.pagos.length})` : v === 'avisos' ? `Avisos (${estado.avisos.length})` : 'Actividad'}
+        {v === 'pedidos' ? `Pedidos (${estado.pedidos_nuevos})` : v === 'pagos' ? `Pagos (${estado.pagos.length})` : v === 'avisos' ? `Avisos (${estado.avisos.length})` : 'Actividad'}
       </button>)}
     </nav>
+    {vista === 'pedidos' && <>
+      <p className="suave">{estado.pedidos_nuevos ? `${estado.pedidos_nuevos} pedidos pendientes de revisión. Abrí el detalle para revisarlos.` : 'Estás al día. No hay pedidos nuevos.'}</p>
+      {estado.pedidos.filter((p) => !p.revisado_at && p.estado !== 'cancelado').map((p) => <article className="pendiente-card" key={p.id}>
+        <span className="estado-badge estado-badge--amarillo">Nuevo pedido</span>
+        <h3>{p.profiles?.marca || marcaDe(p.profile_id)}</h3>
+        <p>{p.order_items.map((i) => i.nombre).join(', ')}</p>
+        <p><strong>{p.total_creditos} créditos</strong> · {fecha(p.created_at)}</p>
+        <button type="button" className="positivo" onClick={() => onVerPedido(p.id)}>Ver y revisar pedido</button>
+      </article>)}
+      {estado.pedidos_nuevos > 50 && <p className="suave">Se muestran 50 pendientes. Al revisarlos aparecerán los siguientes.</p>}
+    </>}
     {vista === 'pagos' && (pago ? <div className="pendiente-card">
       <span className="estado-badge estado-badge--amarillo">Confirmación de pago</span>
       <h3>{pago.profiles?.marca ?? marcaDe(pago.profile_id)}</h3>

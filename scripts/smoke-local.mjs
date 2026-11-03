@@ -9,6 +9,7 @@ async function login(username, password = 'SoloLocal-12345!') {
 }
 
 assert.equal((await fetch(`${base}/api/admin/resumen`)).status, 401);
+assert.equal((await fetch(`${base}/api/admin/pedidos`)).status, 401);
 assert.equal((await fetch(`${base}/api/auth/sesion`)).status, 401, 'Sesión privada sin cookie');
 assert.equal((await login('admin_local', 'incorrecta')).status, 401);
 for (const [username, role, path] of [

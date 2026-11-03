@@ -14,7 +14,7 @@ export default function Modal({ titulo, detalle, ocupado, onCerrar, children }) 
     const origen = document.activeElement;
     const overflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    const destino = panel.current.querySelector('input:not(:disabled), select:not(:disabled)') || panel.current;
+    const destino = panel.current.querySelector('[data-foco-inicial]:not(:disabled)') || panel.current.querySelector('input:not(:disabled), select:not(:disabled), textarea:not(:disabled)') || panel.current;
     destino.focus();
     function teclado(e) {
       if (e.key === 'Escape') {

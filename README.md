@@ -15,7 +15,8 @@ El circuito disponible incluye:
 - Catálogo de planes y servicios con edición y desactivación.
 - Contratación de plan, registro de pago completo y aprobación manual para acreditar créditos.
 - Selección y confirmación de servicios por el cliente, descuento FIFO y consulta de pedidos e historial.
-- Migraciones `0001` a `0006`, reglas SQL, pruebas de concurrencia y permisos con usuarios reales.
+- Avisos de pedidos nuevos, revisión administrativa y panel de cliente con navegación y confirmación.
+- Migraciones `0001` a `0009`, reglas SQL, pruebas de concurrencia y permisos con usuarios reales.
 
 Pendientes: integración efectiva de Mercado Pago, aceptación de términos, agenda, recuperación/cambio de credenciales, traslado de créditos y respaldos automáticos. Ver [PLAN.md](PLAN.md).
 
@@ -79,3 +80,9 @@ Ambos son idempotentes: correrlos varias veces no duplica movimientos ni avisos.
 - Traslado de hasta 1.000 créditos al período siguiente (no trasladables de nuevo). Se modela en la próxima migración.
 - Revisión legal de términos y condiciones antes de publicarlos.
 - Al eliminar una cuenta, el bloqueo de acceso también debe aplicarse en Supabase Auth (el Worker lo hará al implementar el login).
+
+Pedidos: se distingue **recibido, pendiente de revisión** de **revisado por el administrador**, con fechas. El cliente puede dejar un comentario inicial opcional al confirmar y el admin una respuesta opcional al confirmar la revisión (máximo 2000 caracteres cada uno). No se editan después de enviar ni admiten respuestas sucesivas. La coordinación posterior se realiza por los canales habituales, fuera del panel. Requiere la migración 0008 (en local: `npm run db:migrate`, sin reiniciar datos).
+
+Catálogo: la descripción del servicio se edita en un campo amplio en Administración → Catálogo → Editar servicio. El cliente la despliega con **Ver detalle del servicio**, independientemente de la selección. Admite saltos de línea, sin HTML. La barra superior usa `BarraPanel`, un componente común que permanece separado del contenido de cada vista.
+
+Topes de trabajo pendiente: Administración → Capacidad. Permite un máximo general por cliente, excepciones individuales y máximo simultáneo del equipo; sin valores prefijados. Verificación: `npm run test:capacidad`. Calendario por servicio: [plan sin implementar](PLAN_CALENDARIO.md).
