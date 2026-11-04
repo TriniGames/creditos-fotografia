@@ -54,3 +54,5 @@ Los permisos de las API se verifican en el servidor, independientemente del esta
 `EstadoBadge` recibe una variante `positivo`, `advertencia`, `peligro` o `neutro` y su etiqueta como contenido. Los textos y reglas de estado pertenecen a cada pantalla.
 
 `BarraPanel` es el marco global compartido por administración y clientes: separa el centro de notificaciones/estado de la cuenta de la navegación y del contenido de cada sección. `Pedidos` comparte seguimiento y dos notas únicas, sin hilo de respuestas.
+
+`Trabajos` comparte tabla, filtros y editor entre superadmin y empleado. `EstadoTrabajo` unifica las etiquetas por servicio; `roles.js` centraliza los destinos y nombres de cada rol. El empleado no recibe controles de asignación y la API valida siempre su responsabilidad actual.

@@ -4,6 +4,9 @@ import { json, manejar } from '../../../lib/http.js';
 // Lista blanca: solo estas funciones pueden invocarse desde el panel.
 // Cada una declara los argumentos que acepta y si requiere clave de idempotencia.
 const ACCIONES = {
+  guardar_empleado: { args:['p_profile','p_nombre','p_activo'], idem:true },
+  asignar_trabajo: { args:['p_item','p_responsable','p_version'], idem:true },
+  actualizar_trabajo: { args:['p_item','p_detalle','p_estado','p_version'], idem:true },
   guardar_capacidad: { args: ['p_max_cliente','p_max_total'], idem: true },
   guardar_limite_cliente: { args: ['p_profile','p_max_creditos'], idem: true },
   entregar_pedido: { args: ['p_order'], idem: true },
@@ -38,6 +41,7 @@ export const onRequestPost = ({ request, data, env }) =>
     if (def.idem) args.p_idem = body.idem;
 
     if (body.accion === 'revisar_pedido' && args.p_comentario != null && (typeof args.p_comentario !== 'string' || args.p_comentario.length > 2000)) return json({ error: 'COMENTARIO_INVALIDO' }, 400);
+    if (body.accion === 'actualizar_trabajo' && (typeof args.p_detalle !== 'string' || args.p_detalle.length > 10000)) return json({error:'DETALLE_INVALIDO'},400);
     for (const campo of ['p_max_cliente','p_max_total','p_max_creditos']) {
       if (Object.hasOwn(args,campo) && args[campo] !== null && (!Number.isInteger(args[campo]) || args[campo] < 0 || args[campo] > 2147483647)) return json({ error:'LIMITE_INVALIDO' },400);
     }

@@ -104,14 +104,14 @@ export default function Cuenta() {
       {ultimo && <article className="ultimo-pedido">
         <div><EstadoPedido pedido={ultimo} /><h3>Tu último pedido {referenciaPedido(ultimo.id)}</h3>
           <p>{ultimo.total_creditos} créditos · {fecha(ultimo.created_at)}</p>
-          <p>{ultimo.estado === 'cancelado' ? 'Este pedido está cancelado.' : ultimo.revisado_at ? 'El equipo ya revisó tu pedido.' : 'El equipo recibió el aviso. Está pendiente de revisión.'}</p></div>
+          <p>{ultimo.estado === 'cancelado' ? 'Este pedido está cancelado.' : ultimo.estado === 'entregado' ? 'Todos los servicios de este pedido fueron entregados.' : ultimo.estado === 'en_produccion' ? 'El equipo está trabajando en tus servicios. Consultá el avance y el detalle de cada uno.' : ultimo.revisado_at ? 'El equipo ya revisó tu pedido.' : 'El equipo recibió el aviso. Está pendiente de revisión.'}</p></div>
         <button className="secundario editar" onClick={() => { setSeccion('pedidos'); setPedidoAbierto(ultimo.id); }}>Ver detalle</button>
       </article>}
     </section>}
 
     {seccion === 'servicios' && <section>
       <h2>Elegí tus servicios</h2>
-      <p className="capacidad-aviso">Trabajos pendientes: <strong>{datos.capacidad.pendiente} créditos</strong>{datos.capacidad.max_cliente !== null && <> · Tu límite: {datos.capacidad.max_cliente} créditos</>}. {datos.capacidad.disponible !== null ? <>Podés sumar hasta <strong>{datos.capacidad.disponible} créditos</strong> con la capacidad actual.</> : 'La capacidad no tiene un tope configurado.'} Se libera al entregar los pedidos.</p>
+      <p className="capacidad-aviso">Trabajos pendientes: <strong>{datos.capacidad.pendiente} créditos</strong>{datos.capacidad.max_cliente !== null && <> · Tu límite: {datos.capacidad.max_cliente} créditos</>}. {datos.capacidad.disponible !== null ? <>Podés sumar hasta <strong>{datos.capacidad.disponible} créditos</strong> con la capacidad actual.</> : 'La capacidad no tiene un tope configurado.'} Se libera a medida que se entregan los servicios.</p>
       <p className="suave">Seleccioná lo que necesitás. Antes de enviar el pedido vas a poder revisar los créditos a utilizar.</p>
       {!puedePedir && <p className="modal__advertencia">{datos.estado === 'activa' ? 'Tu plazo venció. Contactá al administrador antes de confirmar.' : 'Tu cuenta debe estar activa para confirmar un pedido.'}</p>}
       <form onSubmit={(e) => { e.preventDefault(); if (puedePedir && servicios.length && alcanza && hayCapacidad) setConfirmacion(true); }}>

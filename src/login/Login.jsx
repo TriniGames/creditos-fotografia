@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { destinoRol } from '../shared/roles.js';
 
 export default function Login() {
   const [error, setError] = useState(false);
@@ -23,7 +24,7 @@ export default function Login() {
       return;
     }
     const { rol } = await res.json();
-    window.location.href = rol === 'admin' ? '/admin/' : '/cuenta/';
+    window.location.href = destinoRol(rol);
   }
 
   return (

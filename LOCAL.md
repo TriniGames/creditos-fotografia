@@ -98,3 +98,15 @@ Aplicar la migración 0009 con `npm run db:migrate`. En Administración → Capa
 El cliente ve su carga y la capacidad disponible antes de pedir. La base revalida los topes con un bloqueo global para pedidos de diferentes clientes y cambios de configuración. Si no hay lugar, rechaza toda la operación sin consumir saldo ni generar avisos. La capacidad del equipo se representa en créditos, como aproximación de carga, sin equivalencia automática con horas.
 
 Prueba transaccional específica: `npm run test:capacidad`. Revierte clientes, pedidos, límites y auditoría de prueba; no deja configurados topes reales. El calendario está solamente planificado en [PLAN_CALENDARIO.md](PLAN_CALENDARIO.md).
+
+## Equipo y servicios contratados
+
+Aplicar `npm run db:migrate` hasta 0011. El rol técnico `admin` existente se presenta como **Superadmin** y mantiene su acceso; no se requiere cambiar su cuenta. Desde **Equipo** crea empleados, modifica su nombre y activa/desactiva su acceso. Los empleados ingresan en la misma pantalla de login y van a `/equipo/`. El superadmin administra asignaciones desde **Trabajos**, puede elegir **Mis trabajos** o usar **Asignarme este servicio**. Desde un pedido, **Gestionar servicio y responsable** abre el trabajo correspondiente.
+
+Cada servicio contratado (`order_items`) tiene responsable, detalle acordado, estado, fecha real de entrega y versión. El detalle se obtiene en reuniones o mensajes externos y es visible para el cliente en su pedido; no es una nota interna ni reemplaza los dos comentarios únicos del pedido o la descripción del catálogo. El empleado asignado y el superadmin pueden editarlo e iniciar producción. Para confirmar entrega, el pedido debe estar revisado y el detalle cargado; la pantalla pide confirmación. Los trabajos entregados quedan de consulta. Las modificaciones y reasignaciones se auditan; un borrador desactualizado no pisa una edición nueva.
+
+El empleado solo consulta y modifica servicios asignados a su cuenta; no accede a pagos, saldos, catálogo administrativo ni asignaciones. Desactivarlo bloquea login, sesiones existentes y lectura directa de trabajos por RLS; sus trabajos se conservan para reasignarlos.
+
+La entrega por servicio libera solo sus créditos de capacidad, sin devolver saldo. El pedido pasa a entregado cuando todos sus servicios lo están. Se conserva la operación anterior de entrega completa para compatibilidad, pero el flujo de trabajo nuevo permite entregas parciales. La agenda con fechas comprometidas continúa sin implementar.
+
+Validación: `npm run test:equipo` verifica altas concurrentes, permisos reales, RLS, reasignación, control de versiones, entregas parciales concurrentes, trabajo del superadmin y bloqueo de empleados inactivos. Crea cuentas temporales y las elimina junto a sus datos.

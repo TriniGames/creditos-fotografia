@@ -1,5 +1,6 @@
 import { Fragment, createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { api } from './api.js';
+import { destinoRol } from './roles.js';
 
 const SesionContext = createContext(null);
 
@@ -68,7 +69,7 @@ export function useSesion() {
 
 export function RequiereSesion({ rol, children }) {
   const { usuario, estado, cargarSesion } = useSesion();
-  const destino = usuario?.rol === 'admin' ? '/admin/' : '/cuenta/';
+  const destino = destinoRol(usuario?.rol);
   useEffect(() => {
     if (estado === 'autenticado' && usuario.rol !== rol) window.location.replace(destino);
   }, [estado, usuario, rol, destino]);

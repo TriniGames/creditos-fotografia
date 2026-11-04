@@ -16,7 +16,7 @@ El circuito disponible incluye:
 - Contratación de plan, registro de pago completo y aprobación manual para acreditar créditos.
 - Selección y confirmación de servicios por el cliente, descuento FIFO y consulta de pedidos e historial.
 - Avisos de pedidos nuevos, revisión administrativa y panel de cliente con navegación y confirmación.
-- Migraciones `0001` a `0009`, reglas SQL, pruebas de concurrencia y permisos con usuarios reales.
+- Migraciones `0001` a `0011`, reglas SQL, pruebas de concurrencia y permisos con usuarios reales.
 
 Pendientes: integración efectiva de Mercado Pago, aceptación de términos, agenda, recuperación/cambio de credenciales, traslado de créditos y respaldos automáticos. Ver [PLAN.md](PLAN.md).
 
@@ -86,3 +86,5 @@ Pedidos: se distingue **recibido, pendiente de revisión** de **revisado por el 
 Catálogo: la descripción del servicio se edita en un campo amplio en Administración → Catálogo → Editar servicio. El cliente la despliega con **Ver detalle del servicio**, independientemente de la selección. Admite saltos de línea, sin HTML. La barra superior usa `BarraPanel`, un componente común que permanece separado del contenido de cada vista.
 
 Topes de trabajo pendiente: Administración → Capacidad. Permite un máximo general por cliente, excepciones individuales y máximo simultáneo del equipo; sin valores prefijados. Verificación: `npm run test:capacidad`. Calendario por servicio: [plan sin implementar](PLAN_CALENDARIO.md).
+
+Equipo: el superadmin crea empleados y asigna cada servicio contratado (incluyéndose a sí mismo). El panel `/equipo/` muestra solo trabajos propios; responsable y superadmin registran el detalle acordado visible al cliente y entregas por servicio. Pruebas: `npm run test:equipo`.

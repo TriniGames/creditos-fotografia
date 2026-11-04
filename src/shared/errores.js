@@ -1,5 +1,12 @@
 // Mensajes en español para los códigos que devuelve la base de datos.
 const ERRORES = {
+  TRABAJO_INEXISTENTE: 'No se encontró el servicio contratado.',
+  TRABAJO_INVALIDO: 'Revisá los datos del trabajo.',
+  TRABAJO_MODIFICADO: 'Otra persona actualizó este trabajo. Actualizá el detalle antes de guardar.',
+  RESPONSABLE_INVALIDO: 'Elegí un empleado activo o un superadmin.',
+  DETALLE_INVALIDO: 'El detalle debe tener como máximo 10000 caracteres.',
+  DETALLE_REQUERIDO: 'Guardá el detalle acordado con el cliente antes de confirmar la entrega.',
+  PEDIDO_SIN_REVISAR: 'El superadmin debe confirmar la revisión del pedido antes de entregar sus servicios.',
   LIMITE_INVALIDO: 'Ingresá un límite entero de créditos igual o mayor que cero, o dejalo vacío.',
   TOPE_CLIENTE_SUPERADO: 'Este pedido supera tu capacidad pendiente permitida. Esperá la entrega de trabajos anteriores o contactá al equipo.',
   CAPACIDAD_EQUIPO_SUPERADA: 'El equipo no tiene capacidad disponible para esta selección. Probá con menos servicios o consultá al equipo.',

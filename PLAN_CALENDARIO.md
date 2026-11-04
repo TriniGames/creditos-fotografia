@@ -8,7 +8,7 @@ La unidad de agenda será el **servicio dentro del pedido** (`order_items`), no 
 
 ## 1. Datos y reglas
 
-- Agregar por ítem fecha de entrega comprometida (día, sin hora en esta primera versión), estado de entrega, fecha real de entrega y responsable administrativo de los cambios.
+- Agregar por ítem fecha de entrega comprometida (día, sin hora en esta primera versión). Reutilizar estado, fecha real de entrega, responsable y versión ya existentes.
 - Mantener las fechas de rodaje/postproducción como hitos opcionales posteriores. Ya existe `schedule_events`, pero hoy apunta al pedido completo: antes de reutilizarla, agregar una relación opcional con `order_items` y validar que el ítem pertenezca al pedido indicado. No crear una segunda fuente para la misma fecha de entrega.
 - Permitir fecha pendiente: no inventar una fecha al recibir el pedido. Mostrar **Por coordinar** al cliente.
 - Distinguir **Por coordinar**, **Programado**, **Entregado** y **Cancelado**. **Vencido** se calcula cuando la fecha pasó y todavía no se entregó; no debe confundirse con la expiración de créditos.
@@ -32,8 +32,8 @@ La unidad de agenda será el **servicio dentro del pedido** (`order_items`), no 
 ## 4. Relación con la capacidad
 
 - Los topes actuales miden créditos pendientes simultáneos. Una fecha futura también reserva capacidad; reprogramar no libera cupo.
-- En la primera versión de topes, la entrega se confirma por pedido completo. Al incorporar entregas parciales, liberar únicamente los créditos del ítem entregado y derivar el estado del pedido a partir de sus ítems. Evitar descontar o liberar dos veces.
-- Migrar pedidos ya entregados para que sus ítems queden entregados. Mantener pendientes los ítems de pedidos abiertos.
+- La entrega por ítem y la liberación parcial de capacidad ya están implementadas en la migración 0010 junto al panel de empleados. El calendario debe usar esa misma operación y sus controles de permisos/idempotencia.
+- La migración 0010 ya marcó los ítems de pedidos previamente entregados. No repetir esa migración ni alterar el historial al agregar fechas comprometidas.
 - Los créditos son una aproximación a la carga humana. Un calendario con capacidad diaria/semanal real requiere otro dato: horas estimadas y, eventualmente, responsables/recursos por servicio. No asumir que los créditos equivalen a horas ni que la fecha de entrega representa todos los días de trabajo.
 - Antes de implementar cancelaciones, definir expresamente si se devuelven créditos y cómo se conserva la auditoría. Liberar capacidad y devolver saldo son operaciones distintas.
 

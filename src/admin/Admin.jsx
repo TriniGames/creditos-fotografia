@@ -7,6 +7,8 @@ import PlanesPagos from './PlanesPagos.jsx';
 import NuevoCliente from './NuevoCliente.jsx';
 import Catalogo from './Catalogo.jsx';
 import Capacidad from './Capacidad.jsx';
+import EquipoAdmin from './EquipoAdmin.jsx';
+import Trabajos from '../shared/Trabajos.jsx';
 import Toast from '../shared/Toast.jsx';
 import Pendientes from './Pendientes.jsx';
 import CabeceraSesion from '../shared/CabeceraSesion.jsx';
@@ -15,6 +17,9 @@ import BarraPanel from '../shared/BarraPanel.jsx';
 import { useAutoActualizar } from '../shared/useAutoActualizar.js';
 
 const CONFIRMACIONES = {
+  guardar_empleado:'Empleado actualizado.',
+  asignar_trabajo:'Responsable del servicio actualizado.',
+  actualizar_trabajo:'Detalle y estado del servicio actualizados. El cliente ya puede verlos.',
   guardar_capacidad: 'Topes de capacidad guardados.',
   guardar_limite_cliente: 'Límite del cliente actualizado.',
   entregar_pedido: 'Pedido marcado como entregado. Se liberó su capacidad pendiente.',
@@ -38,6 +43,7 @@ export default function Admin() {
   const [bandeja, setBandeja] = useState(null);
   const [altaAbierta, setAltaAbierta] = useState(false);
   const [pedidoAbierto, setPedidoAbierto] = useState(null);
+  const [trabajoAbierto,setTrabajoAbierto]=useState(null);
   const [errorPedidos, setErrorPedidos] = useState(null);
   const conocidos = useRef(new Set());
   const revisionPedidos = useRef(0);
@@ -51,6 +57,7 @@ export default function Admin() {
       resumen.pedidos.forEach((p) => conocidos.current.add(p.id));
       setEstado(resumen);
       setError(null);
+      return resumen;
     } catch (e) {
       setError(mensajeError(e));
       throw e;
@@ -64,7 +71,8 @@ export default function Admin() {
   useAutoActualizar(async () => {
     const revision = revisionPedidos.current;
     try {
-      const resumen = await api('/api/admin/pedidos');
+      const [pedidos,trabajos] = await Promise.all([api('/api/admin/pedidos'),api('/api/admin/trabajos')]);
+      const resumen={...pedidos,...trabajos};
       if (revision !== revisionPedidos.current) return;
       const nuevos = resumen.pedidos.filter((p) => !conocidos.current.has(p.id) && !p.revisado_at && p.estado !== 'cancelado');
       resumen.pedidos.forEach((p) => conocidos.current.add(p.id));
@@ -76,7 +84,7 @@ export default function Admin() {
         notificar(nuevos.length === 1 ? `Nuevo pedido de ${nuevos[0].profiles?.marca || 'un cliente'}. Abrí Pedidos nuevos para revisarlo.` : `Llegaron ${nuevos.length} pedidos nuevos. Abrí la bandeja para revisarlos.`, 'advertencia');
       }
     } catch {
-      if (revision === revisionPedidos.current) setErrorPedidos('No se pudieron actualizar los pedidos. Se reintentará automáticamente.');
+      if (revision === revisionPedidos.current) setErrorPedidos('No se pudieron actualizar pedidos y trabajos. Se reintentará automáticamente.');
     }
   }, { habilitado: Boolean(estado) && !ocupado && !altaAbierta });
 
@@ -87,6 +95,7 @@ export default function Admin() {
   }
 
   const accion = (nombre, datos) => ejecutar('/api/admin/accion', { accion: nombre, datos }, cargar, CONFIRMACIONES[nombre]);
+  const crearEmpleado = (datos) => ejecutar('/api/admin/crear-empleado',datos,cargar,'Empleado creado. Ya puede ingresar al panel de trabajo.');
   const crearCliente = (datos) => ejecutar('/api/admin/crear-cliente', datos, cargar, 'Cliente creado. Ya puede ingresar con sus credenciales.');
 
   if (!estado) {
@@ -101,13 +110,13 @@ export default function Admin() {
 
   return (
     <main className="tarjeta ancha admin-panel">
-      <CabeceraSesion titulo="Panel de administración" />
+      <CabeceraSesion titulo="Panel de superadministración" />
 
       <Toast aviso={aviso || (error ? { texto: error, tipo: 'error' } : null)}
         onCerrar={() => { cerrarAviso(); setError(null); }} />
       <BarraPanel titulo="Centro de notificaciones" actual={seccion} onCambiar={setSeccion} ocupado={ocupado} secciones={[
           {id:'clientes',texto:'Clientes'},{id:'gestion',texto:'Planes y pagos'},{id:'catalogo',texto:'Catálogo'},
-          {id:'pedidos',texto:'Pedidos',contador:estado.pedidos_nuevos},{id:'capacidad',texto:'Capacidad'},
+          {id:'pedidos',texto:'Pedidos',contador:estado.pedidos_nuevos},{id:'trabajos',texto:'Trabajos'},{id:'equipo',texto:'Equipo'},{id:'capacidad',texto:'Capacidad'},
         ]} >
         <nav className="admin-pendientes" aria-label="Notificaciones y pendientes">
           <button className={`bandeja-boton ${estado.pedidos_nuevos ? 'bandeja-boton--atencion' : ''}`} disabled={ocupado} onClick={() => setBandeja('pedidos')}>
@@ -132,6 +141,9 @@ export default function Admin() {
         <div className="seccion-intro"><p className="suave">Gestioná los datos, el saldo y el estado de tus clientes.</p><button onClick={() => setAltaAbierta(true)}>+ Nuevo cliente</button></div>
         <Clientes clientes={estado.clientes} accion={accion} ocupado={ocupado} />
       </>}
+      {seccion === 'equipo' && <EquipoAdmin equipo={estado.equipo} ocupado={ocupado} crearEmpleado={crearEmpleado} accion={accion} />}
+      {seccion === 'trabajos' && <Trabajos trabajos={estado.trabajos} equipo={estado.equipo} ocupado={ocupado} onActualizar={cargar}
+        abrirId={trabajoAbierto} onAbierto={setTrabajoAbierto} onAsignar={(b)=>accion('asignar_trabajo',b)} onGuardar={(b)=>accion('actualizar_trabajo',b)} />}
       {seccion === 'gestion' && <PlanesPagos estado={estado} marcaDe={marcaDe} accion={accion} />}
       {seccion === 'capacidad' && <Capacidad capacidad={estado.capacidad} clientes={estado.clientes} accion={accion} ocupado={ocupado} />}
       {seccion === 'catalogo' && <Catalogo estado={estado} accion={accion} ocupado={ocupado} />}
@@ -140,7 +152,7 @@ export default function Admin() {
         <div className="resumen-pedidos"><strong>{estado.pedidos_nuevos} {estado.pedidos_nuevos === 1 ? 'pendiente' : 'pendientes'} de revisión</strong><span>Se muestran hasta 50 pedidos, con prioridad para los pendientes.</span></div>
         <Pedidos pedidos={estado.pedidos} marcaDe={marcaDe} ocupado={ocupado} abierto={pedidoAbierto} onAbrir={setPedidoAbierto}
           onRevisar={(id,comentario) => accion('revisar_pedido',{p_order:id,p_comentario:comentario})}
-          onEntregar={(id) => accion('entregar_pedido',{p_order:id})} />
+          onGestionar={(id) => {setPedidoAbierto(null);setTrabajoAbierto(id);setSeccion('trabajos');}} />
       </section>}
       </fieldset>
     </main>

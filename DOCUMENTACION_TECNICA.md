@@ -200,3 +200,13 @@ Lista honesta de lo que revisaria yo antes de usar datos reales. Ordenada por pr
 - Baja y eliminacion con motivo obligatorio. El historial se conserva hasta que el admin decida borrarlo.
 
 - Ampliacion de creditos dentro del ciclo activo, como movimiento separado del plan.
+
+## Ampliación: equipo y ejecución por servicio
+
+El rol `admin` original representa al superadmin. Se incorpora `empleado`, con entrada propia en `/equipo/`; `cliente` conserva `/cuenta/`. La identidad y las autorizaciones se obtienen de la sesión del servidor. El superadmin crea/desactiva empleados y asigna cada servicio contratado a un empleado o a sí mismo.
+
+La unidad de trabajo es `order_items`, con `responsable_id`, `detalle_trabajo`, `estado_trabajo`, `entregado_at` y `version`. El detalle se acuerda fuera de la plataforma, puede editarlo el responsable actual o un superadmin y lo ve el cliente dueño del pedido. No constituye un chat ni es la descripción general del catálogo. La asignación solo la modifica el superadmin.
+
+Las funciones SQL validan responsabilidad, rol activo y versión, bloquean primero el pedido y después el ítem y registran auditoría. Los reintentos idempotentes no repiten entregas ni cambios. Las entregas parciales liberan solo el costo original del ítem; el pedido queda entregado cuando todos sus servicios lo están. Las cuentas desactivadas no pueden continuar operando con sesiones previas. Las políticas RLS limitan al empleado a sus ítems y no le permiten escritura directa.
+
+Migraciones: `0010_equipo_trabajos.sql` y `0011_estado_trabajos.sql`. Verificación reproducible: `npm run test:equipo`, junto a las regresiones de acceso, circuito, capacidad y créditos. La agenda de fechas comprometidas sigue como propuesta en `PLAN_CALENDARIO.md`.

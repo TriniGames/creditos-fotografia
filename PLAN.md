@@ -58,3 +58,13 @@ Catálogo: la descripción del servicio se edita en un campo amplio en Administr
 - [x] Entrega completa auditada para liberar capacidad sin cambiar saldo.
 - [x] Prueba de topes, bloqueo global, rechazos sin efectos, excepciones, entrega y permisos: `npm run test:capacidad`.
 - [ ] Calendario por servicio: **solo planificación**, ver [PLAN_CALENDARIO.md](PLAN_CALENDARIO.md).
+
+## Equipo y responsables (implementado)
+
+- [x] Panel de empleados separado y acceso según rol validado por el servidor.
+- [x] Alta recuperable y desactivación de empleados desde superadministración.
+- [x] Asignación y reasignación por servicio contratado, incluido el propio superadmin.
+- [x] Detalle acordado editable por el responsable y superadmin, visible para el cliente y auditado.
+- [x] Entregas por servicio con liberación parcial de capacidad y cierre del pedido al completar todos.
+- [x] Control de versiones, aislamiento de empleados y prueba `npm run test:equipo`.
+- [ ] Calendario de fechas comprometidas: sigue solamente planificado.

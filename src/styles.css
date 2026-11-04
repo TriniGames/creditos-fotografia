@@ -306,3 +306,11 @@ textarea:focus-visible, summary:focus-visible { outline: 3px solid #2563eb; outl
 .capacidad-config { max-width: 650px; margin: 1.5rem 0; padding: 1.25rem; border: 1px solid var(--linea); border-radius: 10px; background: white; }
 .capacidad-config h3 { margin-top: 0; }
 .capacidad-aviso { border-left: 4px solid #174b80; padding: 1rem; background: #eef4fc; }
+
+.trabajos-filtros { display:flex; flex-wrap:wrap; align-items:end; gap:1rem; margin:1rem 0; }
+.trabajos-filtros label { margin:0; min-width:180px; }
+.trabajos-filtros button { margin:0; }
+.trabajo-asignacion { margin:1rem 0; padding:1rem; border:1px solid #b6c5d9; border-radius:8px; background:#eef4fc; }
+.trabajo-editor { margin-top:1rem; }
+.pedido-trabajos li { display:block; padding:1rem 0; }
+.pedido-trabajos .pedido-nota { margin:.6rem 0; }

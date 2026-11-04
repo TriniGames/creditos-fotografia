@@ -16,6 +16,7 @@ export default defineConfig({
         login: resolve(raiz, 'index.html'),
         cuenta: resolve(raiz, 'cuenta/index.html'),
         admin: resolve(raiz, 'admin/index.html'),
+        equipo: resolve(raiz, 'equipo/index.html'),
       },
     },
   },

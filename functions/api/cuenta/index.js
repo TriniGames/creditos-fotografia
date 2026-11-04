@@ -12,7 +12,7 @@ export const onRequestGet = ({ data, env }) =>
       sbRest(env, `monthly_plans?profile_id=eq.${profile.id}&estado=eq.activo&ciclo_fin=gt.${encodeURIComponent(new Date().toISOString())}&select=periodo,creditos,ciclo_fin&order=ciclo_inicio.desc&limit=1`),
       sbRest(env, `credit_movements?profile_id=eq.${profile.id}&select=id,tipo,cantidad,created_at&order=created_at.desc&limit=30`),
       sbRest(env, 'services?activo=eq.true&select=id,nombre,descripcion,costo_creditos&order=nombre'),
-      sbRest(env, `service_orders?profile_id=eq.${profile.id}&select=id,estado,total_creditos,created_at,revisado_at,entregado_at,comentario_cliente,comentario_admin,order_items(nombre,costo_creditos)&order=created_at.desc&limit=30`),
+      sbRest(env, `service_orders?profile_id=eq.${profile.id}&select=id,estado,total_creditos,created_at,revisado_at,entregado_at,comentario_cliente,comentario_admin,order_items(id,nombre,costo_creditos,detalle_trabajo,estado_trabajo,entregado_at,responsable:profiles!order_items_responsable_id_fkey(nombre))&order=created_at.desc&limit=30`),
       sbRpc(env,'capacidad_cliente',{ p_profile:profile.id }),
     ]);
 

@@ -19,7 +19,7 @@ export const onRequestPost = ({ request, env }) =>
       `profiles?username=eq.${encodeURIComponent(username)}&select=email,rol,estado`
     );
     const perfil = filas[0];
-    if (!perfil || perfil.estado === 'eliminada') return fallo();
+    if (!perfil || perfil.estado === 'eliminada' || (perfil.rol === 'empleado' && perfil.estado !== 'activa')) return fallo();
 
     const res = await fetch(`${env.SUPABASE_URL}/auth/v1/token?grant_type=password`, {
       method: 'POST',

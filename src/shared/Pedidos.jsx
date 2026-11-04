@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Tabla from './Tabla.jsx';
+import EstadoTrabajo from './EstadoTrabajo.jsx';
 import Modal from './Modal.jsx';
 import EstadoBadge from './EstadoBadge.jsx';
 import { fecha } from './format.js';
@@ -18,7 +19,7 @@ export function EstadoPedido({ pedido }) {
 }
 
 // Ambos roles comparten tabla y detalle. Solo administración recibe la acción de revisar.
-export default function Pedidos({ pedidos, ocupado, marcaDe, onRevisar, onEntregar, abierto, onAbrir }) {
+export default function Pedidos({ pedidos, ocupado, marcaDe, onRevisar, onGestionar, abierto, onAbrir }) {
   const pedido = pedidos.find((p) => p.id === abierto);
   const nombreCliente = (p) => p.profiles?.marca || marcaDe?.(p.profile_id);
   return <>
@@ -37,8 +38,11 @@ export default function Pedidos({ pedidos, ocupado, marcaDe, onRevisar, onEntreg
     {pedido && <Modal titulo={`Pedido ${referenciaPedido(pedido.id)}`} detalle={nombreCliente(pedido) || `Enviado el ${fecha(pedido.created_at)}`}
       ocupado={ocupado} onCerrar={() => onAbrir(null)}>
       <div className="pedido-meta"><EstadoPedido pedido={pedido} /><span>{fecha(pedido.created_at)}</span></div>
-      <ul className="lista pedido-servicios">{pedido.order_items.map((item,i) => <li key={i}>
-        <span>{item.nombre}</span><strong>{item.costo_creditos} cr.</strong>
+      <ul className="lista pedido-servicios pedido-trabajos">{pedido.order_items.map((item,i) => <li key={item.id || i}>
+        <div className="pedido-meta"><strong>{item.nombre}</strong><span>{item.costo_creditos} cr.</span><EstadoTrabajo trabajo={{...item,estado_pedido:pedido.estado}} /></div>
+        <p className="suave">Responsable: {item.responsable?.nombre || 'Por asignar'}{item.entregado_at && <> · Entregado el {fecha(item.entregado_at)}</>}</p>
+        <div className="pedido-nota"><strong>Detalle acordado de este servicio</strong><p>{item.detalle_trabajo || 'Por completar después de coordinar con el equipo.'}</p></div>
+        {onGestionar && <button className="secundario editar" onClick={() => onGestionar(item.id)}>Gestionar servicio y responsable</button>}
       </li>)}</ul>
       <p className="pedido-total">Total <strong>{pedido.total_creditos} créditos</strong></p>
       <ol className="pedido-etapas" aria-label="Seguimiento del pedido">
@@ -50,10 +54,8 @@ export default function Pedidos({ pedidos, ocupado, marcaDe, onRevisar, onEntreg
       {pedido.revisado_at && <section className="pedido-nota pedido-nota--admin"><h3>Respuesta del administrador</h3><p>{pedido.comentario_admin || 'El administrador revisó el pedido sin agregar una respuesta.'}</p></section>}
       {onRevisar && !pedido.revisado_at && pedido.estado !== 'cancelado' && <RevisionPedido key={pedido.id} pedido={pedido} onRevisar={onRevisar} />}
       <p className="suave">Este detalle contiene un comentario inicial y una única respuesta del administrador. Para continuar la conversación, usá el canal habitual con el equipo.</p>
-      {onEntregar && pedido.revisado_at && !['entregado','cancelado'].includes(pedido.estado) && <EntregaPedido key={pedido.id} pedido={pedido} onEntregar={onEntregar} />}
       <div className="modal__acciones">
         <button type="button" className="secundario" onClick={() => onAbrir(null)}>Cerrar</button>
-
       </div>
     </Modal>}
   </>;
@@ -66,12 +68,4 @@ function RevisionPedido({ pedido, onRevisar }) {
     <p className="suave">Al confirmar se registra la revisión y se envía esta única respuesta. Después no se puede editar ni agregar otra.</p>
     <button className="positivo" type="submit">Confirmar revisión y enviar respuesta</button>
   </form>;
-}
-
-function EntregaPedido({ pedido, onEntregar }) {
-  const [confirmar, setConfirmar] = useState(false);
-  return <div className="pedido-respuesta">
-    <p>Marcá el pedido como entregado únicamente cuando todos sus servicios estén entregados. Se liberan {pedido.total_creditos} créditos de capacidad; el saldo del cliente no cambia.</p>
-    {confirmar ? <><p><strong>¿Confirmás la entrega completa?</strong> Esta acción no se puede deshacer desde el panel.</p><div className="modal__acciones"><button className="secundario" onClick={() => setConfirmar(false)}>Volver</button><button className="positivo" onClick={() => onEntregar(pedido.id)}>Confirmar entrega completa</button></div></> : <button className="positivo" onClick={() => setConfirmar(true)}>Marcar como entregado</button>}
-  </div>;
 }
